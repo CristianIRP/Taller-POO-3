@@ -1,0 +1,42 @@
+@startuml
+skin rose
+
+entity Usuario{
+   {static} * Id
+    * Nombre
+    {static} * RUT
+    {static} * Correo
+    * Semestre
+    * Rol
+    * Clave
+}
+
+entity Pastel{
+    {static}* Id
+    * Nombre
+    * Porciones
+    * Precio
+    * Stock
+    * FechaCaducidad
+}
+
+entity Ingrediente{
+    * Nombre
+    * Cantidad
+    * UnidadMedida
+}
+entity Pasteleria{
+    * Nombre
+}
+entity Boleta{
+    {static}* UUID
+    * NombreVendedor
+    * FechaDeVenta
+    * Total
+    }
+Pastel"1..*" -- "1"Pasteleria : < vende
+Pastel"1" -- "1..*"Ingrediente : contiene >
+Boleta"1" -- "1..*"Pastel : contiene >
+Usuario"1" -- "0..*"Boleta : emite >
+
+@enduml
