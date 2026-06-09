@@ -1,0 +1,86 @@
+@startuml
+skin rose
+class Usuario{
+    - Id: String
+    - Nombre: String
+    - RUT: String
+    - Correo: String
+    - Semestre: String
+    - Rol: String
+    - Clave: String
+
+    + getId(): String
+    + getNombre(): String
+    + getRUT(): String
+    + getCorreo(): String
+    + getSemestre(): String
+    + getRol(): String
+    + getClave(): String
+}
+
+class Pastel{
+    - IdPastel: String
+    - Nombre: String
+    - Porciones: int
+    - Precio: double
+    - Stock: int
+    - FechaCaducidad: int
+
+    + getId(): String
+    + getNombre(): String
+    + getPorciones(): int
+    + getPrecio(): double
+    + getStock(): int
+    + getFechaCaducidad(): Date
+}
+
+class Ingrediente{
+    - Nombre: String
+    - Cantidad: double
+    - UnidadMedida: String
+
+    + getNombre(): String
+    + getCantidad(): double
+    + getUnidadMedida(): String
+}
+class Pasteleria{
+    - Nombre: String
+
+    + getNombre(): String
+}
+class Boleta{
+    - UUID: String
+    - NombreVendedor: String
+    - FechaDeVenta: Date
+    - Total: double
+
+    + getUUID(): String
+    + getNombreVendedor(): String
+    + getFechaDeVenta(): Date
+    + getTotal(): int
+    }
+class DetalleBoleta{
+    - PastelVendido: pastel
+    - Cantidad: int
+    - subTotal: int
+
+    + getPastelVendido(): pastel
+    + getCantidad(): int
+    + getSubTotal(): int
+
+}
+interface SistemaPasteleria <<interface>>{
+    + iniciarSesion(rut: String, clave: String): Usuario
+    + agregarUsuario(usuario: Usuario): void
+    + eliminarUsuario(id: String): void
+    + registrarPastel(pastel: Pastel): void
+    + eliminarPastel(id: String): void
+    + eliminacionAutomatica(id: String): void
+    + generarBoleta(boleta: Boleta, detalles: List<DetalleBoleta>): void
+}
+
+SistemaPasteleriaIMpl -- Usuario
+SistemaPasteleriaIMpl -- Pastel
+SistemaPasteleriaIMpl -- Boleta
+
+@enduml
