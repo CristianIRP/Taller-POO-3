@@ -1,11 +1,13 @@
 @startuml
 skin rose
+left to right direction
+
 class Usuario{
     - Id: String
     - Nombre: String
     - RUT: String
     - Correo: String
-    - Semestre: String
+    - Semestre: int
     - Rol: String
     - Clave: String
 
@@ -13,7 +15,7 @@ class Usuario{
     + getNombre(): String
     + getRUT(): String
     + getCorreo(): String
-    + getSemestre(): String
+    + getSemestre(): int
     + getRol(): String
     + getClave(): String
 }
@@ -22,14 +24,14 @@ class Pastel{
     - IdPastel: String
     - Nombre: String
     - Porciones: int
-    - Precio: double
+    - Precio: int
     - Stock: int
-    - FechaCaducidad: int
+    - FechaCaducidad: Date
 
     + getId(): String
     + getNombre(): String
     + getPorciones(): int
-    + getPrecio(): double
+    + getPrecio(): int
     + getStock(): int
     + getFechaCaducidad(): Date
 }
@@ -52,15 +54,15 @@ class Boleta{
     - UUID: String
     - NombreVendedor: String
     - FechaDeVenta: Date
-    - Total: double
+    - Total: int
 
     + getUUID(): String
     + getNombreVendedor(): String
-    + getFechaDeVenta(): Date
+    + getFechaDeVenta(): LocalDate
     + getTotal(): int
     }
 class DetalleBoleta{
-    - PastelVendido: pastel
+    - PastelVendido: Pastel
     - Cantidad: int
     - subTotal: int
 
@@ -70,17 +72,29 @@ class DetalleBoleta{
 
 }
 interface SistemaPasteleria <<interface>>{
+    + cargarUsuarios(ruta: String): boolean
+    + cargarPasteles(ruta: String): boolean
     + iniciarSesion(rut: String, clave: String): Usuario
     + agregarUsuario(usuario: Usuario): void
     + eliminarUsuario(id: String): void
     + registrarPastel(pastel: Pastel): void
     + eliminarPastel(id: String): void
-    + eliminacionAutomatica(id: String): void
-    + generarBoleta(boleta: Boleta, detalles: List<DetalleBoleta>): void
+    + verificarEliminacionAutomatica(): void
+    + historialVentas(): List<Boleta>
+    + generarBoleta(vendedor: Usuario, productosAVender: Map<String, Integer>): Boleta
 }
-
-SistemaPasteleriaIMpl -- Usuario
-SistemaPasteleriaIMpl -- Pastel
-SistemaPasteleriaIMpl -- Boleta
-
+class SistemaPasteleriaIMpl{
+    - usuarios: Map<String, Usuario>
+    - pasteles: Map<String, Pastel>
+    - historialBoletas: Map<String, Boleta>
+}
+SistemaPasteleriaIMpl ..|> SistemaPasteleria: <<implements>>
+SistemaPasteleriaIMpl *-- Usuario
+SistemaPasteleriaIMpl *-- Pastel
+SistemaPasteleriaIMpl *-- Boleta
+Boleta *-- DetalleBoleta: contiene
+DetalleBoleta --> Pastel: vende
+Pastel *-- Ingrediente: contiene
+Pastel *-- Pasteleria: vende
+Usuario *-- Boleta: emite
 @enduml
