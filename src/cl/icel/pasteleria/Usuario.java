@@ -1,6 +1,7 @@
 package cl.icel.pasteleria;
 
 public class Usuario {
+    private String idUsuario;
     private String nombre;
     private String RUT;
     private String correo;
@@ -15,6 +16,10 @@ public class Usuario {
         this.semestre = semestre;
         this.rol = rol;
         this.clave = clave;
+    }
+
+    public String getIdUsuario() {
+        return idUsuario;
     }
 
     public String getNombre() {

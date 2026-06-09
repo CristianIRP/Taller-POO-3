@@ -1,0 +1,4 @@
+XFDD01, Francisco Concha,12345678-9,fconcha@alumnos.ucn.cl,noveno,Secretario General,123456
+FGJIX, María González,98765432-1,mgonzalez@alumnos.ucn.cl,octavo,Tesorero,maria2026
+MN552, Camila Rojas,11223344-5,crojas@alumnos.ucn.cl,séptimo,Delegada,rojas2026
+FGJIX, Juan González,14559876-1,jgonzalez@alumnos.ucn.cl,sexto,Representante,gonzalez2026
