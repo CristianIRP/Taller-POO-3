@@ -1,3 +1,5 @@
+package cl.icel.pasteleria;
+
 public class Usuario {
     private String nombre;
     private String RUT;
