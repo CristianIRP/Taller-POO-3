@@ -18,4 +18,6 @@ public interface SistemaPasteleria {
     //ventas y el historial
     Boleta generarBoleta(Usuario vendedor, Map<String, Integer> productosAVender);
     Collection<Boleta> obtenerHistorialVentas();
+    Pastel obtenerPastelPorId(String idPastel);
+    Boleta obtenerBoletaPorUuid(String uuid);
 }

@@ -14,4 +14,16 @@ public class DetalleBoleta {
         this.cantidad = cantidad;
         this.subTotal = subTotal;
     }
+
+    public Pastel getPastelVendido() {
+        return pastelVendido;
+    }
+
+    public int getCantidad() {
+        return cantidad;
+    }
+
+    public int getSubTotal() {
+        return subTotal;
+    }
 }

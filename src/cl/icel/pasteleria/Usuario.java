@@ -9,7 +9,8 @@ public class Usuario {
     private String rol;
     private String clave;
 
-    public Usuario(String nombre, String RUT, String correo, String semestre, String rol, String clave) {
+    public Usuario(String idUsuario, String nombre, String RUT, String correo, String semestre, String rol, String clave) {
+        this.idUsuario = idUsuario;
         this.nombre = nombre;
         this.RUT = RUT;
         this.correo = correo;
@@ -17,6 +18,8 @@ public class Usuario {
         this.rol = rol;
         this.clave = clave;
     }
+
+
 
     public String getIdUsuario() {
         return idUsuario;
