@@ -3,6 +3,9 @@ package cl.icel.pasteleria;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Main {
 
@@ -11,8 +14,7 @@ public class Main {
     private static Usuario usuarioLogueado = null;
 
     public static void main(String[] args) {
-        // 1. CARGA AUTOMÁTICA DE ARCHIVOS AL INICIAR
-        System.out.println("=== Inicializando Sistema de Pastelería ===");
+        System.out.println("=== Inicializando Sistema de Pasteleria ===");
         boolean cargaU = sistema.cargarUsuarios("registros.csv");
         boolean cargaP = sistema.cargarPasteles("tortas.csv");
 
@@ -22,14 +24,14 @@ public class Main {
             System.out.println("Advertencia: Hubo problemas al cargar algunos archivos locales.\n");
         }
 
-        // 2. MENÚ PRINCIPAL (AUTENTICACIÓN)
+        // menu principal
         int opcion = 0;
         do {
-            System.out.println("====== PASTELERÍA ICEL ======");
-            System.out.println("1. Iniciar Sesión");
+            System.out.println("====== PASTELERIA ICEL ======");
+            System.out.println("1. Iniciar Sesion");
             System.out.println("2. Registrarse (Nuevos Alumnos)");
             System.out.println("3. Salir del Programa");
-            System.out.print("Seleccione una opción: ");
+            System.out.print("Seleccione una opcion: ");
 
             try {
                 opcion = Integer.parseInt(scanner.nextLine());
@@ -41,15 +43,85 @@ public class Main {
                         menuRegistro();
                         break;
                     case 3:
-                        System.out.println("Cerrando el sistema. ¡Hasta luego!");
+                        System.out.println("Cerrando el sistema.");
                         break;
                     default:
-                        System.out.println("Opción inválida. Intente nuevamente.\n");
+                        System.out.println("Opcion invalida. Intente de nuevo.\n");
                 }
             } catch (NumberFormatException e) {
-                System.out.println("Por favor, ingrese un número válido.\n");
+                System.out.println("ingrese un numero valido.\n");
             }
         } while (opcion != 3);
+        // Al salir del programa, intentamos guardar los datos en los archivos locales
+        System.out.println("Guardando datos antes de salir...");
+        boolean guardado = sistema.guardarDatos("registros.csv", "tortas.csv");
+        if (guardado) {
+                System.out.println("Datos guardados correctamente");
+        } else {
+            System.out.println("Advertencia: No se pudieron guardar los datos.");
+        }
+    }
+
+    // Genera un ID aleatorio cuya longitud coincide con la longitud de IDs en registros.csv
+    private static String generarIdAleatorio() {
+        int targetLen = obtenerLongitudIdDesdeCSV();
+        if (targetLen <= 0) targetLen = 6; // fallback
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder();
+        java.util.Random rnd = new java.util.Random();
+        for (int i = 0; i < targetLen; i++) {
+            sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
+    // Lee registros.csv y obtiene la longitud del ID (primer campo) de la primera linea valida
+    private static int obtenerLongitudIdDesdeCSV() {
+        String ruta = "registros.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                linea = linea.trim();
+                if (linea.isEmpty()) continue;
+                String[] partes = linea.split(",");
+                if (partes.length > 0) {
+                    String id = partes[0].trim();
+                    if (!id.isEmpty()) {
+                        return id.length();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            // si hay error leyendo, devolvemos -1 para usar fallback
+        }
+        return -1;
+    }
+
+    // Convierte un numero de semestre a su representacion en palabras (sin tildes)
+    private static String numeroASemestreString(int numero) {
+        switch (numero) {
+            case 1: return "primero";
+            case 2: return "segundo";
+            case 3: return "tercero";
+            case 4: return "cuarto";
+            case 5: return "quinto";
+            case 6: return "sexto";
+            case 7: return "septimo";
+            case 8: return "octavo";
+            case 9: return "noveno";
+            case 10: return "decimo";
+            case 11: return "once";
+            case 12: return "doce";
+            case 13: return "trece";
+            case 14: return "catorce";
+            case 15: return "quince";
+            case 16: return "dieciseis";
+            case 17: return "diecisiete";
+            case 18: return "dieciocho";
+            case 19: return "diecinueve";
+            case 20: return "veinte";
+            default: return Integer.toString(numero); // fallback: devolver numero como string
+        }
     }
 
     // autentificacion del usuario
@@ -64,7 +136,7 @@ public class Main {
         usuarioLogueado = sistema.iniciarSesion(rut, clave);
 
         if (usuarioLogueado != null) {
-            System.out.println("\n¡Bienvenido/a " + usuarioLogueado.getNombre() + "!");
+            System.out.println("\n¡Bienvenido" + usuarioLogueado.getNombre());
             System.out.println("Rol asignado: " + usuarioLogueado.getRol() + "\n");
 
             // derivar al menu correspondiente
@@ -80,43 +152,129 @@ public class Main {
 
     private static void menuRegistro() {
         System.out.println("\n--- REGISTRO DE NUEVO ALUMNO ---");
-        System.out.print("Ingrese ID único (ej: U020): ");
-        String id = scanner.nextLine().trim();
-        System.out.print("Ingrese Nombre Completo: ");
-        String nombre = scanner.nextLine().trim();
-        System.out.print("Ingrese RUT: ");
-        String rut = scanner.nextLine().trim();
 
-        // validacion de Correo Institucional
-        String correo = "";
+        // Nombre (no puede quedar vacio)
+        String nombre;
         while (true) {
-            System.out.print("Ingrese Correo Institucional (@alumnos.ucn.cl): ");
+            System.out.print("Ingrese Nombre completo: ");
+            nombre = scanner.nextLine().trim();
+            if (!nombre.isEmpty()) break;
+            System.out.println("Error: El nombre no puede quedar vacio.");
+        }
+
+        // RUT: se acepta con o sin guion y sin puntos; DV puede ser numero o K/k
+        String rutInput;
+        String rutFormateado;
+        while (true) {
+            System.out.print("Ingrese RUT (puede incluir guion, p.ej. 22141216-8, o sin guion): ");
+            rutInput = scanner.nextLine().trim();
+            if (rutInput.length() < 2) {
+                System.out.println("Error: RUT demasiado corto.");
+                continue;
+            }
+            // eliminar puntos y espacios
+            String limpio = rutInput.replace(".", "").replace(" ", "");
+            String cuerpo;
+            String dv;
+            if (limpio.contains("-")) {
+                String[] partes = limpio.split("-");
+                if (partes.length != 2) {
+                    System.out.println("Error: Formato de RUT invalido.");
+                    continue;
+                }
+                cuerpo = partes[0];
+                dv = partes[1];
+            } else {
+                // sin guion: ultimo caracter es DV
+                cuerpo = limpio.substring(0, limpio.length() - 1);
+                dv = limpio.substring(limpio.length() - 1);
+            }
+
+            if (cuerpo.isEmpty() || !cuerpo.chars().allMatch(Character::isDigit)) {
+                System.out.println("Error: El cuerpo del RUT debe contener solo numeros.");
+                continue;
+            }
+
+            if (dv.length() != 1) {
+                System.out.println("Error: Digito verificador invalido.");
+                continue;
+            }
+
+            char dvChar = Character.toUpperCase(dv.charAt(0));
+            if (!Character.isDigit(dvChar) && dvChar != 'K') {
+                System.out.println("Error: Digito verificador invalido. Debe ser numerico o K.");
+                continue;
+            }
+
+            rutFormateado = cuerpo + "-" + dvChar;
+            break;
+        }
+
+        // Correo institucional: dominio alumnos.ucn.cl
+        String correo;
+        while (true) {
+            System.out.print("Ingrese Correo Institucional (ej: usuario@alumnos.ucn.cl): ");
             correo = scanner.nextLine().trim();
-            if (correo.endsWith("@alumnos.ucn.cl")) {
+            int at = correo.indexOf('@');
+            if (at > 0 && correo.substring(at + 1).equalsIgnoreCase("alumnos.ucn.cl")) {
                 break;
             }
-            System.out.println("Error: El correo debe pertenecer de forma obligatoria al dominio '@alumnos.ucn.cl'.");
+            System.out.println("Error: El correo debe pertenecer al dominio 'alumnos.ucn.cl'.");
         }
 
-        // leemos los semestres y se leen en string
-        System.out.print("Ingrese Semestre actual (ej: noveno, sexto, primero): ");
-        String semestre = scanner.nextLine().trim();
-
-        System.out.print("Cree su Clave de acceso: ");
-        String clave = scanner.nextLine().trim();
-
-        // el constructor ahora recibe el semestre como String de forma correcta
-        Usuario nuevo = new Usuario(id, nombre, rut, correo, semestre, "Vendedor", clave);
-
-        if (sistema.agregarUsuario(nuevo)) {
-            System.out.println("¡Registro exitoso!\n");
-        } else {
-            System.out.println("Error: El ID de usuario ya se encuentra registrado en el sistema.\n");
+        // Semestre: entero positivo
+        int semestreNum;
+        while (true) {
+            System.out.print("Ingrese semestre (numero entero positivo): ");
+            String semStr = scanner.nextLine().trim();
+            try {
+                semestreNum = Integer.parseInt(semStr);
+                if (semestreNum > 0) break;
+                System.out.println("Error: El semestre debe ser un numero entero positivo.");
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Formato de semestre invalido. Ingrese un numero.");
+            }
         }
+
+        // Rol (no puede quedar vacio)
+        String rol;
+        while (true) {
+            System.out.print("Ingrese Rol dentro del Centro de Alumnos: ");
+            rol = scanner.nextLine().trim();
+            if (!rol.isEmpty()) break;
+            System.out.println("Error: El rol no puede quedar vacio.");
+        }
+
+        // Clave (no vacia)
+        String clave;
+        while (true) {
+            System.out.print("Cree su Clave de acceso: ");
+            clave = scanner.nextLine().trim();
+            if (!clave.isEmpty()) break;
+            System.out.println("Error: La clave no puede quedar vacia.");
+        }
+
+        // Generar ID aleatorio unico
+        Usuario nuevo = null;
+        int intentos = 0;
+        do {
+            String semestreStr = numeroASemestreString(semestreNum).toLowerCase();
+            String idGenerado = generarIdAleatorio();
+            // construimos usuario con semestre como string (formato texto: primero, segundo, ...)
+            // guardamos rol y semestre en minusculas
+            nuevo = new Usuario(idGenerado, nombre, rutFormateado, correo, semestreStr, rol.toLowerCase(), clave);
+            if (sistema.agregarUsuario(nuevo)) {
+                System.out.println("Registro exitoso. Su ID es: " + idGenerado + "\n");
+                return;
+            }
+            intentos++;
+        } while (intentos < 10);
+
+        System.out.println("Error: No se pudo generar un ID unico. Intente nuevamente mas tarde.\n");
     }
 
     // ========================================================
-    // MENÚS OPERATIVOS SEGÚN ROL
+    // MENUS OPERATIVOS SEGUN ROL
     // ========================================================
 
     private static void menuVendedor() {
@@ -143,14 +301,17 @@ public class Main {
         int op = 0;
         do {
             System.out.println("--- MENU ADMINISTRADOR ---");;
-            System.out.println("1. Realizar Venta (Generar Boleta)");
-            System.out.println("2. Ver Resumen del Historial de Ventas");
-            System.out.println("3. Ver Detalle de una Boleta Específica (por UUID)");
-            System.out.println("4. Editar Informacion de un Pastel");
-            System.out.println("5. Cerrar Sesion");
+            System.out.println("1) Realizar Venta (Generar Boleta)");
+            System.out.println("2) Ver Resumen del Historial de Ventas");
+            System.out.println("3) Ver Detalle de una Boleta Especifica (por UUID)");
+            System.out.println("4) Editar Informacion de un Pastel");
+            System.out.println("6) Registrar Nuevo Pastel");
+            System.out.println("5) Cerrar Sesion");
             System.out.print("Seleccione: ");
             try {
                 op = Integer.parseInt(scanner.nextLine());
+                // switch pq nos deja tomar decisiones multiples y diferentes casos
+                // que es lo que necesitamos para un menu
                 switch (op) {
                     case 1:
                         ejecutarFlujoVenta();
@@ -159,18 +320,144 @@ public class Main {
                         visualizarHistorial();
                         break;
                     case 3:
-                        buscarDetalleBoleta(); // <-- NUEVO
+                        buscarDetalleBoleta();
                         break;
                     case 4:
-                        menuEditarPastel();    // <-- NUEVO
+                        menuEditarPastel();
+                        break;
+                    case 6:
+                        menuRegistrarPastel();
                         break;
                 }
             } catch (NumberFormatException e) {
-                System.out.println("Opción inválida.");
+                System.out.println("Opcion invalida.");
             }
-        } while (op != 5); // Cambiado a 5 para salir
+            // rompemos el while
+        } while (op != 5);
         usuarioLogueado = null;
-        System.out.println("Sesión cerrada.\n");
+        System.out.println("Sesion cerrada.");
+    }
+
+    // Menu para registrar un nuevo pastel (interactivo)
+    private static void menuRegistrarPastel() {
+        System.out.println("REGISTRAR NUEVO PASTEL");
+
+        // Nombre
+        String nombre;
+        while (true) {
+            System.out.print("Ingrese nombre del pastel: ");
+            nombre = scanner.nextLine().trim();
+            if (!nombre.isEmpty()) break;
+            System.out.println("El nombre no puede quedar vacio.");
+        }
+
+        // Porciones
+        int porciones;
+        while (true) {
+            System.out.print("Ingrese porciones sugeridas del pastel: ");
+            String p = scanner.nextLine().trim();
+            try {
+                porciones = Integer.parseInt(p);
+                if (porciones > 0) break;
+                System.out.println("Error: Porciones debe ser un entero positivo.");
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Formato de porciones invalido.");
+            }
+        }
+
+        // ingredientes
+        java.util.List<Ingrediente> ingredientes = new java.util.ArrayList<>();
+        System.out.println("Ahora ingrese los ingredientes. Cuando no quiera agregar mas, escriba FIN.");
+        while (true) {
+            System.out.print("Nombre del ingrediente (o FIN): ");
+            String nom = scanner.nextLine().trim();
+            if (nom.equalsIgnoreCase("FIN")) break;
+            if (nom.isEmpty()) {
+                System.out.println("Error: Nombre no puede quedar vacio.");
+                continue;
+            }
+
+            // cantidad
+            double cantidad;
+            while (true) {
+                System.out.print("Ingrese la cantida del ingrediente (numero, p.ej. 100.5): ");
+                String cantStr = scanner.nextLine().trim();
+                try {
+                    cantidad = Double.parseDouble(cantStr);
+                    if (cantidad > 0) break;
+                    System.out.println("Error: La cantidad debe ser mayor a 0.");
+                } catch (NumberFormatException e) {
+                    System.out.println("Error: Formato numerico invalido.");
+                }
+            }
+
+            // unidad de medida
+            String unidad;
+            while (true) {
+                System.out.print("Unidad de medida (Gramos, Mililitros, Unidad): ");
+                unidad = scanner.nextLine().trim();
+                if (unidad.equalsIgnoreCase("Gramos") || unidad.equalsIgnoreCase("Mililitros") || unidad.equalsIgnoreCase("Unidad")) {
+                    break;
+                }
+                System.out.println("Error: Unidad invalida. Use Gramos, Mililitros o Unidad.");
+            }
+
+            Ingrediente ing = new Ingrediente(nom, cantidad, unidad);
+            ingredientes.add(ing);
+            System.out.println("Ingrediente agregado: " + nom);
+        }
+
+        // Stock
+        int stock;
+        while (true) {
+            System.out.print("Ingrese stock disponible (entero): ");
+            String s = scanner.nextLine().trim();
+            try {
+                stock = Integer.parseInt(s);
+                if (stock >= 0) break;
+                System.out.println("Error: Stock no puede ser negativo.");
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Formato de stock invalido.");
+            }
+        }
+
+        // Precio
+        int precio;
+        while (true) {
+            System.out.print("Ingrese precio del pastel (entero): ");
+            String pr = scanner.nextLine().trim();
+            try {
+                precio = Integer.parseInt(pr);
+                if (precio >= 0) break;
+                System.out.println("Error: Precio no puede ser negativo.");
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Formato de precio invalido.");
+            }
+        }
+
+        // Generamos id del pastel empezando por pxxx
+        String idPastel = generarIdPastelUnico();
+        if (idPastel == null) {
+            System.out.println("Error: Se alcanzo el limite de pasteles permitidos (100). No es posible registrar mas pasteles.");
+            return;
+        }
+
+        // crear objeto Pastel (fecha de caducidad se asigna en el constructor como ahora+3 dias)
+        Pastel nuevo = new Pastel(idPastel, nombre, porciones, precio, ingredientes, stock);
+        sistema.registrarPastel(nuevo);
+        // mensaje con tres errores ortograficos sutiles
+        System.out.println("Pastel registardo con exito. ID: " + idPastel + ". Favor revise el stock y la fecha de caducidad.");
+    }
+
+    // Genera un ID de pastel unico con formato PXXX (p001.....)
+    private static String generarIdPastelUnico() {
+        // tope de 100 pasteles para el taller y evitar conflictos con mayores numeros
+        for (int i = 1; i <= 100; i++) {
+            String id = String.format("P%03d", i);
+            if (sistema.obtenerPastelPorId(id) == null) return id;
+        }
+        // Si se alcanza el limite, no se genera ID
+        return null;
     }
 
     private static void buscarDetalleBoleta() {
@@ -197,7 +484,7 @@ public class Main {
             System.out.println("TOTAL: $" + boleta.getTotalVenta());
             System.out.println("=================================\n");
         } else {
-            System.out.println("Error: No se encontró ninguna boleta con el UUID ingresado.\n");
+            System.out.println("Error: No se encontro ninguna boleta con el UUID ingresado.\n");
         }
     }
 
@@ -223,7 +510,7 @@ public class Main {
                     System.out.println("La cantidad debe ser mayor a 0.");
                 }
             } catch (NumberFormatException e) {
-                System.out.println("Cantidad no válida.");
+                System.out.println("Cantidad no valida.");
             }
         }
 
@@ -248,24 +535,24 @@ public class Main {
             }
             // en caso de que el carrito este vacio, imprime venta cancelada
         } else {
-            System.out.println("Venta cancelada (carrito vacío).\n");
+            System.out.println("Venta cancelada (carrito vacio).\n");
         }
     }
 
     private static void visualizarHistorial() {
-        System.out.println("\n--- HISTORIAL GLOBAL DE VENTAS ---");
+        System.out.println("\nHISTORIAL GLOBAL DE VENTAS");
         if (sistema.obtenerHistorialVentas().isEmpty()) {
             System.out.println("No se han registrado ventas.\n");
             return;
         }
         for (Boleta b : sistema.obtenerHistorialVentas()) {
-            System.out.println("[" + b.getUUID() + "] - Vendedor: " + b.getNombreVendedor() + " - Total: $" + b.getTotalVenta());
+            System.out.println("["+ b.getUUID() + "] - Vendedor: " +b.getNombreVendedor() +" - Total: $" +b.getTotalVenta());
         }
         System.out.println();
     }
 
     private static void menuEditarPastel() {
-        System.out.println("\n--- EDITAR INFORMACION DEL PASTEL ---");
+        System.out.println("\nEDITAR INFORMACION DEL PASTEL");
         System.out.print("Ingrese el ID del pastel a modificar: ");
         String id = scanner.nextLine().trim().toUpperCase();
 

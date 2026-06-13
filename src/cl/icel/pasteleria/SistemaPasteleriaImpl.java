@@ -14,6 +14,7 @@ public class SistemaPasteleriaImpl implements SistemaPasteleria {
     private Map<String, Usuario> usuarios;
     private Map<String, Boleta> historialBoletas;
     private Map<String, Pastel> pasteles;
+    private Map<String, Integer> porcionesDisponibles = new HashMap<>();
 
     public SistemaPasteleriaImpl() {
         this.usuarios = new HashMap<>();
@@ -58,16 +59,24 @@ public class SistemaPasteleriaImpl implements SistemaPasteleria {
                 String[] datos = linea.split(",");
                 // ya que solicitamos 6 datos para los pasteles (creacion), colocamos un ciclo if para cerciorarnos
                 // de que tienen 6 datos separados por comas.
-                if (datos.length == 6) {
+                // Aceptamos lineas con 6 campos (incluye ingredientes) o 5 campos (sin ingredientes)
+                if (datos.length == 6 || datos.length == 5) {
                     String id = datos[0].trim();
                     String nombre = datos[1].trim();
                     int porciones = Integer.parseInt(datos[2].trim());
                     int precio = Integer.parseInt(datos[3].trim());
-                    String stringIngredientes = datos[4].trim();
-                    int stock = Integer.parseInt(datos[5].trim());
+                    String stringIngredientes = "";
+                    int stock;
+                    if (datos.length == 6) {
+                        stringIngredientes = datos[4].trim();
+                        stock = Integer.parseInt(datos[5].trim());
+                    } else {
+                        // formato sin campo de ingredientes: id,nombre,porciones,precio,stock
+                        stock = Integer.parseInt(datos[4].trim());
+                    }
 
                     List<Ingrediente> listaIngredientes = new ArrayList<>();
-                    String[] ingredientesIndividuales = stringIngredientes.split(" ");
+                    String[] ingredientesIndividuales = stringIngredientes.isEmpty() ? new String[0] : stringIngredientes.split(" ");
 
                     for (String ingStr : ingredientesIndividuales) {
                         String[] detalleIng = ingStr.split(":");
@@ -137,16 +146,20 @@ public class SistemaPasteleriaImpl implements SistemaPasteleria {
         List<DetalleBoleta> listaDetalles = new ArrayList<>();
         int totalBoleta = 0;
 
+        // primero validamos stock y vigencia de todo
         for (Map.Entry<String, Integer> entrada : productosAVender.entrySet()) {
-            String idPastel = entrada.getKey();
+            String idPastel = entrada.getKey().toUpperCase().trim();
             int cantidadSolicitada = entrada.getValue();
 
-            if (!this.pasteles.containsKey(idPastel)) {
-                System.out.println("El pastel con ID " + idPastel + " no existe en el catalogo");
+            boolean esPorcion = idPastel.endsWith("-P");
+            String idPastelRealizado = esPorcion ? idPastel.replace("-P", "") : idPastel;
+
+            if (!this.pasteles.containsKey(idPastelRealizado)) {
+                System.out.println("El pastel con ID " + idPastelRealizado + " no existe en el catalogo");
                 return null;
             }
 
-            Pastel pastel = this.pasteles.get(idPastel);
+            Pastel pastel = this.pasteles.get(idPastelRealizado);
 
             if (pastel.getFechaCaducidadPastel().isBefore(LocalDate.now())) {
                 System.out.println("El pastel '" + pastel.getNombrePastel() + "' esta vencido. No se puede vender.");
@@ -154,31 +167,66 @@ public class SistemaPasteleriaImpl implements SistemaPasteleria {
                 return null;
             }
 
-            if (pastel.getStockPastel() < cantidadSolicitada) {
-                System.out.println("Stock insuficiente para '" + pastel.getNombrePastel() +
-                        "'. Disponible: " + pastel.getStockPastel() + ", Solicitado: " + cantidadSolicitada);
-                return null;
+            if (esPorcion) {
+                // calculo de porciones totales combinando vitrina y tortas enteras
+                int porcionesActuales = porcionesDisponibles.getOrDefault(idPastelRealizado, 0);
+                int porcionesMaximasPosibles = porcionesActuales + (pastel.getStockPastel() * pastel.getPorcionesPastel());
+                if (porcionesMaximasPosibles < cantidadSolicitada) {
+                    System.out.println("No hay suficientes porciones disponibles para '" + pastel.getNombrePastel() + "'");
+                    return null;
+                }
+            } else {
+                // validacion normal para pasteles completos
+                if (pastel.getStockPastel() < cantidadSolicitada) {
+                    System.out.println("Stock insuficiente para '" + pastel.getNombrePastel() + "'. Disponible: " + pastel.getStockPastel() + ", Solicitado: " + cantidadSolicitada);
+                    return null;
+                }
             }
         }
 
+        // segundo procesamos la venta aplicando los descuentos reales
         for (Map.Entry<String, Integer> entrada : productosAVender.entrySet()) {
-            String idPastel = entrada.getKey();
+            String idPastel = entrada.getKey().toUpperCase().trim();
             int cantidad = entrada.getValue();
 
-            Pastel pastel = this.pasteles.get(idPastel);
-            int nuevoStock = pastel.getStockPastel() - cantidad;
-            pastel.setStockPastel(nuevoStock);
+            boolean esPorcion = idPastel.endsWith("-P");
+            String idPastelRealizado = esPorcion ? idPastel.replace("-P", "") : idPastel;
+            Pastel pastel = this.pasteles.get(idPastelRealizado);
 
-            int subtotal = pastel.getPrecioPastel() * cantidad;
+            int precioUnitario = 0;
+            String nombreItem = "";
+
+            if (esPorcion) {
+                nombreItem = "Porcion de " + pastel.getNombrePastel();
+                precioUnitario = pastel.getPrecioPastel() / pastel.getPorcionesPastel();
+
+                int porcionesEnVitrina = porcionesDisponibles.getOrDefault(idPastelRealizado, 0);
+
+                // si faltan porciones cortadas, abrimos pasteles completos del stock
+                while (porcionesEnVitrina < cantidad) {
+                    pastel.setStockPastel(pastel.getStockPastel() - 1);
+                    porcionesEnVitrina += pastel.getPorcionesPastel();
+                }
+
+                // guardamos el remanente de porciones en la vitrina
+                porcionesDisponibles.put(idPastelRealizado, porcionesEnVitrina - cantidad);
+            } else {
+                nombreItem = pastel.getNombrePastel() + " (Completo)";
+                precioUnitario = pastel.getPrecioPastel();
+                pastel.setStockPastel(pastel.getStockPastel() - cantidad);
+            }
+
+            int subtotal = precioUnitario * cantidad;
             totalBoleta += subtotal;
 
-            DetalleBoleta detalle = new DetalleBoleta(pastel, cantidad, subtotal);
+            // clonamos temporalmente el objeto para el desglose de la boleta
+            Pastel itemDetalle = new Pastel(idPastel, nombreItem, pastel.getPorcionesPastel(), precioUnitario, pastel.getListaIngredientes(), cantidad);
+            DetalleBoleta detalle = new DetalleBoleta(itemDetalle, cantidad, subtotal);
             listaDetalles.add(detalle);
         }
 
         String uuidCorto = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
 
-        // CORREGIDO: se llama a getNombre() de acuerdo a tu entidad Usuario
         Boleta nuevaBoleta = new Boleta(uuidCorto, vendedor.getNombre(), LocalDate.now(), listaDetalles, totalBoleta);
 
         this.historialBoletas.put(uuidCorto, nuevaBoleta);
@@ -201,4 +249,43 @@ public class SistemaPasteleriaImpl implements SistemaPasteleria {
     public Boleta obtenerBoletaPorUuid(String uuid) {
         return this.historialBoletas.get(uuid.toUpperCase().trim());
     }
-} // Fin de la clase
+    @Override
+    public boolean guardarDatos(String rutaUsuarios, String rutaPasteles) {
+        // 1. Guardar usuarios actualizados
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(rutaUsuarios))) {
+            for (Usuario u : usuarios.values()) {
+                String semestre = u.getSemestre() != null ? u.getSemestre().toLowerCase() : "";
+                String rol = u.getRol() != null ? u.getRol().toLowerCase() : "";
+                pw.println(u.getIdUsuario()+","+ u.getNombre() + ","+u.getRUT() +"," +
+                        u.getCorreo()+","+ semestre + "," + rol + ","+u.getClave());
+            }
+        } catch (IOException e) {
+            System.out.println("Error al guardar usuarios");
+            return false;
+        }
+
+        // Guardar pasteles actualizados
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(rutaPasteles))) {
+            for (Pastel p : pasteles.values()) {
+                StringBuilder ingStr = new StringBuilder();
+                for (Ingrediente ing : p.getListaIngredientes()) {
+                    ingStr.append(ing.getNombreIngrediente()).append(":")
+                            .append(ing.getCantidadIngrediente()).append(":")
+                            .append(ing.getUnidadMedidaIngrediente()).append(" ");
+                }
+                // Si no hay ingredientes, escribimos una linea con 5 campos (sin campo de ingredientes)
+                if (ingStr.toString().trim().isEmpty()) {
+                    pw.println(p.getIdPastel() + "," + p.getNombrePastel() + "," + p.getPorcionesPastel() + "," +
+                            p.getPrecioPastel() + "," + p.getStockPastel());
+                } else {
+                    pw.println(p.getIdPastel() + "," + p.getNombrePastel() + "," + p.getPorcionesPastel() + "," +
+                            p.getPrecioPastel() + "," + ingStr.toString().trim() + "," + p.getStockPastel());
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            System.out.println("Error al guardar pasteles");
+            return false;
+        }
+    }
+}

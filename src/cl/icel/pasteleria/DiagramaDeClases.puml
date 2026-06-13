@@ -74,6 +74,8 @@ class DetalleBoleta{
 interface SistemaPasteleria <<interface>>{
     + cargarUsuarios(ruta: String): boolean
     + cargarPasteles(ruta: String): boolean
+    + guardarUsuarios(ruta: String): boolean
+    + guardarPasteles(ruta: String): boolean
     + iniciarSesion(rut: String, clave: String): Usuario
     + agregarUsuario(usuario: Usuario): void
     + eliminarUsuario(id: String): void
