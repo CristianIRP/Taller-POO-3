@@ -8,10 +8,12 @@ public interface SistemaPasteleria {
     boolean cargarPasteles(String rutaArchivo);
 
     // iniciar sesion y registro
+    // Cuando agregamos a un usuario, este se guarda en csv cuando cerramos el programa
     Usuario iniciarSesion(String rut, String clave);
     boolean agregarUsuario(Usuario usuario);
 
-    // gestion de pasteles
+    // gestion de pasteless
+    // cuando registramos los pasteles, se guardan al cerrar el programa
     void registrarPastel(Pastel pastel);
     void verificarEliminacionAutomatica();
 
@@ -20,4 +22,7 @@ public interface SistemaPasteleria {
     Collection<Boleta> obtenerHistorialVentas();
     Pastel obtenerPastelPorId(String idPastel);
     Boleta obtenerBoletaPorUuid(String uuid);
+    
+    // datos en CSV (usuarios y pasteles)
+    boolean guardarDatos(String rutaUsuarios, String rutaPasteles);
 }

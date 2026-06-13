@@ -9,7 +9,7 @@ public class Pastel {
     private int porcionesPastel;
     private int precioPastel;
     private int stockPastel;
-    // Cambiado de String a List<Ingrediente> para cumplir con la composición orientada a objetos
+    // Cambiado de String a List<Ingrediente> para cumplir con la composicion orientada a objetos
     private List<Ingrediente> listaIngredientes;
     private LocalDate fechaCaducidadPastel;
 
@@ -29,13 +29,12 @@ public class Pastel {
         this.precioPastel = precioPastel;
         this.listaIngredientes = listaIngredientes;
         this.stockPastel = stockPastel;
-
-        // REQUERIMIENTO OBLIGATORIO: Se asigna automáticamente a 3 días después del registro
         this.fechaCaducidadPastel = LocalDate.now().plusDays(3);
     }
 
 
     // metodos getters necesarios
+
 
     public List<Ingrediente> getListaIngredientes() {
         return listaIngredientes;
